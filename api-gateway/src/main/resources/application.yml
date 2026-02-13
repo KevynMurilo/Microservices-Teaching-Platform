@@ -1,0 +1,92 @@
+# ==================================================
+# API GATEWAY
+# Single entry point for all microservices.
+# Clients never call services directly — always through the gateway.
+# Docs: https://docs.spring.io/spring-cloud-gateway/reference/
+# ==================================================
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: order-service-route
+              uri: http://${ORDER_SERVICE_HOST:localhost}:8081
+              predicates:
+                - Path=/api/orders/**
+              filters:
+                # Circuit Breaker: if order-service is down, return a fallback
+                # instead of hanging or throwing a 500.
+                # Docs: https://resilience4j.readme.io/docs/circuitbreaker
+                - name: CircuitBreaker
+                  args:
+                    name: orderServiceCB
+                    fallbackUri: forward:/fallback
+
+            - id: payment-service-route
+              uri: http://${PAYMENT_SERVICE_HOST:localhost}:8082
+              predicates:
+                - Path=/api/payments/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: paymentServiceCB
+                    fallbackUri: forward:/fallback
+
+            - id: notification-service-route
+              uri: http://${NOTIFICATION_SERVICE_HOST:localhost}:8083
+              predicates:
+                - Path=/api/notifications/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: notificationServiceCB
+                    fallbackUri: forward:/fallback
+
+# ==================================================
+# CIRCUIT BREAKER (Resilience4j)
+# Docs: https://resilience4j.readme.io/docs/circuitbreaker
+# ==================================================
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 3s
+
+# ==================================================
+# OBSERVABILITY
+# ==================================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://${JAEGER_HOST:localhost}:4318/v1/traces
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+# ==================================================
+# LOGGING
+# ==================================================
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    io.github.resilience4j: DEBUG
