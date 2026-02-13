@@ -180,9 +180,9 @@ microsservices/
 ## Per-Service Documentation
 
 - [API Gateway](api-gateway/API-GATEWAY.md)
-- [Order Service](microservices/order-service/ORDER-SERVICE.md)
-- [Payment Service](microservices/payment-service/PAYMENT-SERVICE.md)
-- [Notification Service](microservices/notification-service/NOTIFICATION-SERVICE.md)
+- [Order Service](microsservices/order-service/ORDER-SERVICE.md)
+- [Payment Service](microsservices/payment-service/PAYMENT-SERVICE.md)
+- [Notification Service](microsservices/notification-service/NOTIFICATION-SERVICE.md)
 
 ## Tech Stack
 
